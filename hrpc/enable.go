@@ -6,6 +6,7 @@
 package hrpc
 
 import (
+	"bytes"
 	"context"
 
 	"github.com/golang/protobuf/proto"
@@ -36,11 +37,18 @@ func (et *EnableTable) Name() string {
 
 // ToProto converts the RPC into a protobuf message
 func (et *EnableTable) ToProto() proto.Message {
+	namespace := []byte("default")
+	table := et.table
+	i := bytes.Index(table, []byte(":"))
+	if i > -1 {
+		namespace = table[:i]
+		table = table[i+1:]
+	}
+
 	return &pb.EnableTableRequest{
 		TableName: &pb.TableName{
-			// TODO: handle namespaces
-			Namespace: []byte("default"),
-			Qualifier: et.table,
+			Namespace: namespace,
+			Qualifier: table,
 		},
 	}
 }

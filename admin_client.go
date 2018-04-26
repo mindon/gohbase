@@ -24,6 +24,12 @@ type AdminClient interface {
 	EnableTable(t *hrpc.EnableTable) error
 	DisableTable(t *hrpc.DisableTable) error
 	ClusterStatus() (*pb.ClusterStatus, error)
+
+	ModifyTable(t *hrpc.ModifyTable) error
+	AddColumn(t *hrpc.AddColumn) error
+	GetTableNames(t *hrpc.GetTableNames) ([]*pb.TableName, error)
+	ListTableNamesByNamespace(t *hrpc.ListTableNamesByNamespace) ([]*pb.TableName, error)
+	ListTableDescriptorsByNamespace(t *hrpc.ListTableDescriptorsByNamespace) ([]*pb.TableSchema, error)
 }
 
 // NewAdminClient creates an admin HBase client.
@@ -83,6 +89,76 @@ func (c *client) CreateTable(t *hrpc.CreateTable) error {
 	return c.checkProcedureWithBackoff(t.Context(), r.GetProcId())
 }
 
+func (c *client) GetTableNames(t *hrpc.GetTableNames) ([]*pb.TableName, error) {
+	pbmsg, err := c.SendRPC(t)
+	if err != nil {
+		return nil, err
+	}
+
+	r, ok := pbmsg.(*pb.GetTableNamesResponse)
+	if !ok {
+		return nil, fmt.Errorf("sendRPC returned not a GetTableNamesResponse")
+	}
+
+	return r.GetTableNames(), nil
+}
+
+func (c *client) ListTableNamesByNamespace(t *hrpc.ListTableNamesByNamespace) ([]*pb.TableName, error) {
+	pbmsg, err := c.SendRPC(t)
+	if err != nil {
+		return nil, err
+	}
+
+	r, ok := pbmsg.(*pb.ListTableNamesByNamespaceResponse)
+	if !ok {
+		return nil, fmt.Errorf("sendRPC returned not a GetTableNamesResponse")
+	}
+
+	return r.GetTableName(), nil
+}
+
+func (c *client) ListTableDescriptorsByNamespace(t *hrpc.ListTableDescriptorsByNamespace) ([]*pb.TableSchema, error) {
+	pbmsg, err := c.SendRPC(t)
+	if err != nil {
+		return nil, err
+	}
+
+	r, ok := pbmsg.(*pb.ListTableDescriptorsByNamespaceResponse)
+	if !ok {
+		return nil, fmt.Errorf("sendRPC returned not a GetTableNamesResponse")
+	}
+
+	return r.GetTableSchema(), nil
+}
+
+func (c *client) ModifyTable(t *hrpc.ModifyTable) error {
+	pbmsg, err := c.SendRPC(t)
+	if err != nil {
+		return err
+	}
+
+	_, ok := pbmsg.(*pb.ModifyTableResponse)
+	if !ok {
+		return fmt.Errorf("sendRPC returned not a ModifyTableResponse")
+	}
+
+	return nil
+}
+
+func (c *client) AddColumn(t *hrpc.AddColumn) error {
+	pbmsg, err := c.SendRPC(t)
+	if err != nil {
+		return err
+	}
+
+	_, ok := pbmsg.(*pb.AddColumnResponse)
+	if !ok {
+		return fmt.Errorf("sendRPC returned not a AddColumnResponse")
+	}
+
+	return nil
+}
+
 func (c *client) DeleteTable(t *hrpc.DeleteTable) error {
 	pbmsg, err := c.SendRPC(t)
 	if err != nil {
@@ -133,7 +209,11 @@ func (c *client) checkProcedureWithBackoff(ctx context.Context, procID uint64) e
 			return err
 		}
 
-		res := pbmsg.(*pb.GetProcedureResultResponse)
+		res, ok := pbmsg.(*pb.GetProcedureResultResponse)
+		if !ok {
+			return fmt.Errorf("sendRPC returned not a GetProcedureResultResponse")
+		}
+
 		switch res.GetState() {
 		case pb.GetProcedureResultResponse_NOT_FOUND:
 			return fmt.Errorf("procedure not found")
