@@ -204,8 +204,10 @@ func FlushInterval(interval time.Duration) Option {
 // Close closes connections to hbase master and regionservers
 func (c *client) Close() {
 	c.closeOnce.Do(func() {
-		close(c.done)
-		if c.clientType == adminClient {
+		if c.done != nil {
+			close(c.done)
+		}
+		if c.clientType == adminClient && c.adminRegionInfo != nil {
 			if ac := c.adminRegionInfo.Client(); ac != nil {
 				ac.Close()
 			}

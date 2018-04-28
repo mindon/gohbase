@@ -30,6 +30,7 @@ func NewModifyTable(ctx context.Context, table []byte,
 		base: base{
 			table: table,
 			ctx:   ctx,
+			resultch: make(chan RPCResult, 1),
 		},
 		families: make(map[string]map[string]string, len(families)),
 	}
@@ -112,6 +113,7 @@ func NewGetTableNames(ctx context.Context, namespace string, filter string, incl
 	ct := &GetTableNames{
 		base: base{
 			ctx:   ctx,
+			resultch: make(chan RPCResult, 1),
 		},
 		namespace: namespace,
 		filter: filter,
@@ -152,6 +154,7 @@ func NewListTableNamesByNamespace(ctx context.Context, namespace string,
 	ct := &ListTableNamesByNamespace{
 		base: base{
 			ctx:   ctx,
+			resultch: make(chan RPCResult, 1),
 		},
 		namespace: namespace,
 	}
@@ -189,6 +192,7 @@ func NewListTableDescriptorsByNamespace(ctx context.Context, namespace string,
 	ct := &ListTableDescriptorsByNamespace{
 		base: base{
 			ctx:   ctx,
+			resultch: make(chan RPCResult, 1),
 		},
 		namespace: namespace,
 	}

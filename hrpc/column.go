@@ -30,6 +30,7 @@ func NewAddColumn(ctx context.Context, table []byte,
 		base: base{
 			table: table,
 			ctx:   ctx,
+			resultch: make(chan RPCResult, 1),
 		},
 		families: make(map[string]map[string]string, len(families)),
 	}
