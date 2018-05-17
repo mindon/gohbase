@@ -244,8 +244,12 @@ func (c *client) lookupRegion(ctx context.Context,
 		}).Error("failed looking up region")
 
 		// This will be hit if there was an error locating the region
-		backoff, err = sleepAndIncreaseBackoff(ctx, backoff)
-		if err != nil {
+		var errb error
+		backoff, errb = sleepAndIncreaseBackoff(ctx, backoff)
+		if errb != nil {
+			return nil, "", errb
+		}
+		if backoff > c.regionLookupTimeout {
 			return nil, "", err
 		}
 	}
@@ -456,6 +460,10 @@ func (c *client) establishRegion(reg hrpc.RegionInfo, addr string) {
 		if err != nil {
 			// region is dead
 			reg.MarkAvailable()
+			return
+		}
+		if backoff > c.regionLookupTimeout {
+			reg.MarkUnavailable()
 			return
 		}
 		if addr == "" {
